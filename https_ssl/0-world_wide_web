@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# This script checks the DNS records for subdomains and displays information about them
+
+# Check if domain is provided
+if [ -z "$1" ]; then
+  echo "You must provide a domain."
+  exit 1
+fi
+
+# Function to audit DNS record of a subdomain
+audit_subdomain() {
+  local subdomain=$1
+  local domain=$2
+  result=$(dig +short $subdomain.$domain)
+  
+  if [ -z "$result" ]; then
+    echo "No record found for $subdomain.$domain"
+  else
+    echo "The subdomain $subdomain is a A record and points to $result"
+  fi
+}
+
+# If subdomain is provided, audit that subdomain
+if [ ! -z "$2" ]; then
+  audit_subdomain $2 $1
+else
+  # Otherwise, audit the default subdomains
+  for subdomain in "www" "lb-01" "web-01" "web-02"; do
+    audit_subdomain $subdomain $1
+  done
+fi
