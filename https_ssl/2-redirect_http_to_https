@@ -1,37 +1,47 @@
+# /etc/haproxy/2-redirect_http_to_https
+
+# Global settings
 global
     log /dev/log local0
     log /dev/log local1 notice
     daemon
-    maxconn 2048
-    tune.ssl.default-dh-param 2048
     user haproxy
     group haproxy
+    # Optional SSL defaults
+    ssl-default-bind-ciphers PROFILE=SYSTEM
+    ssl-default-bind-options no-sslv3
 
+# Default settings
 defaults
-    log global
-    mode http
-    option httplog
-    option dontlognull
-    retries 3
-    option redispatch
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
     timeout connect 5000ms
-    timeout client 10000ms
-    timeout server 10000ms
-    option forwardfor
-    option http-server-close
+    timeout client  50000ms
+    timeout server  50000ms
+    errorfile 400 /etc/haproxy/errors/400.http
+    errorfile 403 /etc/haproxy/errors/403.http
+    errorfile 408 /etc/haproxy/errors/408.http
+    errorfile 500 /etc/haproxy/errors/500.http
+    errorfile 502 /etc/haproxy/errors/502.http
+    errorfile 503 /etc/haproxy/errors/503.http
+    errorfile 504 /etc/haproxy/errors/504.http
 
-# HTTP frontend: redirect all traffic to HTTPS
-frontend www-http
-    bind 0.0.0.0:80
+# HTTP frontend - redirect to HTTPS
+frontend http_front
+    bind *:80
+    mode http
     redirect scheme https code 301 if !{ ssl_fc }
 
-# HTTPS frontend: terminate SSL and forward to backend
-frontend www-https
-    bind 0.0.0.0:443 ssl crt /etc/letsencrypt/certs/www.nyayath.tech.pem
-    default_backend www-backend
+# HTTPS frontend
+frontend https_front
+    bind *:443 ssl crt /etc/ssl/private/haproxy.pem
+    mode http
+    default_backend web_back
 
 # Backend servers
-backend www-backend
+backend web_back
+    mode http
     balance roundrobin
-    server web01 3.82.222.41:80 check
-    server web02 54.196.19.105:80 check
+    server web-01 127.0.0.1:8080 check
