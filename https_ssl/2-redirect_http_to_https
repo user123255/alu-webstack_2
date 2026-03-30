@@ -23,21 +23,18 @@ defaults
     errorfile 503 /etc/haproxy/errors/503.http
     errorfile 504 /etc/haproxy/errors/504.http
 
-# Frontend for HTTP - redirect to HTTPS
 frontend http_front
     bind *:80
     mode http
     redirect scheme https code 301 if !{ ssl_fc }
 
-# Frontend for HTTPS traffic
 frontend https_front
-    bind *:443 ssl crt /etc/ssl/certs/your-cert.pem
+    bind *:443 ssl crt /etc/ssl/certs/your_cert.pem
     mode http
     default_backend web_servers
 
-# Backend web servers
 backend web_servers
     mode http
     balance roundrobin
-    server web01 3.82.222.41:443 check ssl verify none
-    server web02 54.196.19.105:443 check ssl verify none
+    server web01 3.82.222.41:80 check
+    server web02 54.196.19.105:80 check
