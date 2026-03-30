@@ -1,25 +1,20 @@
-# /etc/haproxy/2-redirect_http_to_https
-
-# Global settings
 global
-    log /dev/log local0
-    log /dev/log local1 notice
-    daemon
+    log /dev/log    local0
+    log /dev/log    local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+    stats timeout 30s
     user haproxy
     group haproxy
-    # Optional SSL defaults
-    ssl-default-bind-ciphers PROFILE=SYSTEM
-    ssl-default-bind-options no-sslv3
+    daemon
 
-# Default settings
 defaults
     log     global
-    mode    http
     option  httplog
     option  dontlognull
-    timeout connect 5000ms
-    timeout client  50000ms
-    timeout server  50000ms
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -28,20 +23,21 @@ defaults
     errorfile 503 /etc/haproxy/errors/503.http
     errorfile 504 /etc/haproxy/errors/504.http
 
-# HTTP frontend - redirect to HTTPS
+# Frontend for HTTP - redirect to HTTPS
 frontend http_front
     bind *:80
     mode http
     redirect scheme https code 301 if !{ ssl_fc }
 
-# HTTPS frontend
+# Frontend for HTTPS traffic
 frontend https_front
-    bind *:443 ssl crt /etc/ssl/private/haproxy.pem
+    bind *:443 ssl crt /etc/ssl/certs/your-cert.pem
     mode http
-    default_backend web_back
+    default_backend web_servers
 
-# Backend servers
-backend web_back
+# Backend web servers
+backend web_servers
     mode http
     balance roundrobin
-    server web-01 127.0.0.1:8080 check
+    server web01 3.82.222.41:443 check ssl verify none
+    server web02 54.196.19.105:443 check ssl verify none
